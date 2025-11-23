@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Portal - GPTC Pala</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+        .lumina-power-footer { display: flex; justify-content: center; align-items: center; gap: 0.5rem; font-family: 'Poppins', sans-serif; text-decoration: none; margin-top: 1rem; opacity: 0.7; }
+        .lumina-logo-text { font-weight: 700; color: #cbd5e1; letter-spacing: 0.05em; }
+        .lumina-logo-text .accent { color: #10b981; } 
+        .lumina-logo-tagline { font-size: 0.5rem; color: #94a3b8; letter-spacing: 0.2em; text-transform: uppercase; }
+        .roll-btn { aspect-ratio: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 0.75rem; border: 2px solid #e2e8f0; background: white; font-weight: 700; transition: all 0.1s; }
+        .roll-btn.present { background-color: #d1fae5; border-color: #10b981; color: #047857; }
+        .roll-btn.absent { background-color: #fee2e2; border-color: #ef4444; color: #b91c1c; opacity: 0.8; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.2s ease-out; }
+        .nav-btn.active { color: #10b981; background-color: #ecfdf5; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; z-index: 50; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
+        .modal.hidden { display: none; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-800">
+
+    <!-- LOGIN SCREEN -->
+    <div id="loginPage" class="min-h-screen flex flex-col items-center justify-center bg-slate-900 p-6">
+        <div class="w-full max-w-sm">
+            <div class="text-center mb-8">
+                <img src="https://cdn.universitykart.com//Content/upload/admin/2gxbml1q.ori.jpg" class="w-20 h-20 rounded-full border-4 border-slate-700 shadow-xl mx-auto mb-4">
+                <h1 class="text-3xl font-bold text-white tracking-tight">Teacher Portal</h1>
+                <p class="text-slate-400 text-sm mt-1">Dept. of EEE • GPTC Pala</p>
+            </div>
+            <div class="bg-white/10 backdrop-blur-lg border border-white/10 p-6 rounded-2xl shadow-2xl">
+                <form id="loginForm" class="space-y-4">
+                    <div><label class="text-xs font-bold text-slate-300 uppercase ml-1">Faculty Email</label><input type="email" id="email" required class="w-full px-4 py-3 bg-slate-800/50 border border-slate-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+                    <div><label class="text-xs font-bold text-slate-300 uppercase ml-1">Password</label><input type="password" id="password" required class="w-full px-4 py-3 bg-slate-800/50 border border-slate-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+                    <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition mt-2">Login</button>
+                    <div id="loginMessage" class="text-center text-xs text-red-400 font-medium min-h-[20px]"></div>
+                </form>
+            </div>
+            <div class="mt-12 text-center"><a href="#" class="lumina-power-footer"><span class="text-[10px] text-slate-500 uppercase tracking-wider">Powered by</span><div class="text-left leading-tight"><div class="lumina-logo-text text-sm">LUMINA<span class="accent">.</span></div></div></a></div>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="mainApp" class="hidden flex-1 flex flex-col h-screen overflow-hidden">
+        <header class="bg-white shadow-sm z-30 px-4 py-3 flex justify-between items-center shrink-0">
+            <div><h1 class="font-bold text-slate-800 text-lg">Faculty Console</h1><div class="flex items-center gap-2 text-xs"><span id="facultyName" class="text-slate-600">Loading...</span><span id="roleBadge" class="px-1.5 py-0.5 rounded font-bold hidden"></span></div></div>
+            <button onclick="openModal('profileModal')" class="bg-emerald-50 text-emerald-600 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-emerald-100"><i class="fa-solid fa-user-gear"></i></button>
+        </header>
+
+        <div class="bg-white border-b border-slate-200 flex overflow-x-auto shrink-0">
+            <button onclick="switchTab('attendance', this)" class="nav-btn active flex-1 py-3 text-sm font-bold text-slate-600 border-b-2 border-transparent hover:bg-slate-50 transition">Attendance</button>
+            <button onclick="switchTab('myClass', this)" id="tabMyClass" class="nav-btn hidden flex-1 py-3 text-sm font-bold text-slate-600 border-b-2 border-transparent hover:bg-slate-50 transition">My Class</button>
+            <button onclick="switchTab('leaves', this)" id="tabLeaves" class="nav-btn hidden flex-1 py-3 text-sm font-bold text-slate-600 border-b-2 border-transparent hover:bg-slate-50 transition">Approvals</button>
+            <button onclick="switchTab('dept', this)" id="tabDept" class="nav-btn hidden flex-1 py-3 text-sm font-bold text-slate-600 border-b-2 border-transparent hover:bg-slate-50 transition">Dept.</button>
+        </div>
+
+        <main class="flex-1 overflow-y-auto p-4 pb-24 bg-slate-50">
+            <!-- ATTENDANCE -->
+            <div id="attendance" class="tab-content active space-y-4">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <select id="semSelect" class="w-full p-3 border rounded-lg bg-slate-50 text-sm font-bold"><option value="1">Sem 1</option><option value="2">Sem 2</option><option value="3">Sem 3</option><option value="4">Sem 4</option><option value="5">Sem 5</option><option value="6">Sem 6</option></select>
+                        <input type="date" id="attDate" class="w-full p-3 border rounded-lg bg-slate-50 text-sm font-bold">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <select id="attPeriod" class="w-full p-3 border rounded-lg bg-slate-50 text-sm"><option value="">Period...</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select>
+                        <div class="flex gap-2"><select id="attSubject" class="w-full p-3 border rounded-lg bg-slate-50 text-sm"><option>Loading Subs...</option></select><button onclick="openAddSubjectModal()" class="bg-indigo-100 text-indigo-600 px-3 rounded-lg font-bold shadow-sm hover:bg-indigo-200"><i class="fa-solid fa-plus"></i></button></div>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center"><h3 class="font-bold text-slate-700">Student List</h3><div class="text-xs font-mono text-slate-400" id="studentCount">0 Students</div></div>
+                <div id="attendanceGrid" class="grid grid-cols-4 gap-3"><p class="col-span-full text-center text-slate-400 text-sm py-10">Select Semester.</p></div>
+            </div>
+
+            <!-- MY CLASS -->
+            <div id="myClass" class="tab-content space-y-4">
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                    <h3 class="font-bold text-blue-900 text-lg mb-1">Class Management</h3>
+                    <select id="manageSemSelect" class="w-full p-2 border rounded-lg text-sm font-bold bg-white"></select>
+                </div>
+                <div id="teacherBirthdayWidget" class="hidden bg-pink-50 p-3 rounded-xl border border-pink-100 flex items-start gap-3"><div class="bg-pink-100 p-2 rounded-full text-pink-500"><i class="fa-solid fa-cake-candles"></i></div><div><h4 class="font-bold text-pink-800 text-sm">Birthdays!</h4><p class="text-xs text-pink-600 mt-1" id="teacherBdayNames"></p></div></div>
+                
+                <div class="flex gap-2">
+                    <button onclick="openModal('addStudentModal')" class="flex-1 bg-white p-3 rounded-xl border shadow-sm flex flex-col items-center justify-center gap-1 hover:bg-slate-50"><i class="fa-solid fa-user-plus text-indigo-600"></i><span class="text-[10px] font-bold text-slate-600">Add Student</span></button>
+                    <button onclick="openModal('addSubjectModal')" class="flex-1 bg-white p-3 rounded-xl border shadow-sm flex flex-col items-center justify-center gap-1 hover:bg-slate-50"><i class="fa-solid fa-book-medical text-purple-600"></i><span class="text-[10px] font-bold text-slate-600">Add Subject</span></button>
+                    <button onclick="autoSortAndRenumber()" class="flex-1 bg-white p-3 rounded-xl border shadow-sm flex flex-col items-center justify-center gap-1 hover:bg-slate-50"><i class="fa-solid fa-arrow-down-a-z text-emerald-600"></i><span class="text-[10px] font-bold text-slate-600">Re-Sort & Renumber</span></button>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-3 bg-slate-50 border-b font-bold text-xs text-slate-500 uppercase">Students (Click Star for Rep)</div>
+                    <div id="manageStudentList" class="divide-y divide-slate-100 max-h-60 overflow-y-auto"></div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-3 bg-slate-50 border-b font-bold text-xs text-slate-500 uppercase">Subjects</div>
+                    <div id="manageSubjectList" class="divide-y divide-slate-100 max-h-60 overflow-y-auto"></div>
+                </div>
+            </div>
+
+            <!-- APPROVALS (Combined Leaves & Pending Attendance) -->
+            <div id="leaves" class="tab-content space-y-4">
+                <!-- Pending Attendance Section -->
+                <h3 class="font-bold text-slate-700 mb-1">Attendance Approval <span class="text-xs text-slate-400 font-normal">(from Class Reps)</span></h3>
+                <div id="pendingAttendanceList" class="space-y-3 mb-6"><p class="text-center text-slate-400 text-sm">No pending attendance logs.</p></div>
+
+                <!-- Leave Requests Section -->
+                <h3 class="font-bold text-slate-700 mb-1">Leave Requests</h3>
+                <div id="tutorLeaveList" class="space-y-3"><p class="text-center text-slate-400 text-sm">No pending requests.</p></div>
+            </div>
+
+            <!-- DEPT -->
+            <div id="dept" class="tab-content space-y-4">
+                <div class="bg-yellow-50 p-4 rounded-xl border border-yellow-100 mb-4"><h3 class="font-bold text-yellow-900 text-lg">HOD Panel</h3></div>
+                <div class="flex justify-between items-center mb-2"><h4 class="font-bold text-slate-700">Faculty List</h4><button onclick="openModal('addFacultyModal')" class="bg-emerald-600 text-white px-3 py-1 rounded-lg text-xs font-bold">Add Faculty</button></div>
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6"><div id="deptFacultyList" class="divide-y divide-slate-100"></div></div>
+            </div>
+        </main>
+
+        <div id="attendanceActionFooter" class="bg-white border-t border-slate-200 p-4 pb-safe sticky bottom-0 z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+            <div class="flex justify-between items-center mb-3 text-sm px-1"><span class="font-bold text-emerald-600" id="countPresent">0 Present</span><div class="flex gap-2"><button onclick="downloadAttendancePDF()" class="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded font-bold"><i class="fa-solid fa-file-pdf"></i> PDF</button><span class="font-bold text-red-500" id="countAbsent">0 Absent</span></div></div>
+            <button id="submitBtn" class="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl shadow-lg active:scale-95 transition flex justify-center items-center gap-2"><i class="fa-solid fa-check-circle"></i> Submit Attendance</button>
+        </div>
+    </div>
+
+    <!-- MODALS -->
+    <div id="addStudentModal" class="modal hidden"><div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm mx-4"><h3 class="text-lg font-bold mb-4 text-slate-800">Add Student</h3><form id="addStudentForm" class="space-y-3"><input type="text" id="newStudentName" placeholder="Full Name" required class="w-full p-3 border rounded-lg text-sm bg-slate-50"><select id="newStudentType" class="w-full p-3 border rounded-lg text-sm bg-slate-50"><option value="regular">Regular</option><option value="let" id="optLet">Lateral Entry (LET)</option></select><p class="text-[10px] text-slate-400">Adding will automatically sort & renumber.</p><div class="flex gap-2 pt-2"><button type="button" onclick="closeModal('addStudentModal')" class="flex-1 py-2 bg-slate-100 text-slate-600 rounded-lg font-bold text-sm">Cancel</button><button type="submit" class="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-bold text-sm">Add & Sort</button></div></form></div></div>
+    <div id="studentDetailsModal" class="modal hidden"><div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm mx-4 relative"><button onclick="closeModal('studentDetailsModal')" class="absolute top-4 right-4 text-slate-400"><i class="fa-solid fa-times"></i></button><div class="text-center mb-4"><div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-2 text-indigo-600 text-2xl font-bold" id="detailInitials"></div><h3 class="text-lg font-bold text-slate-800" id="detailName">Name</h3><p class="text-sm text-slate-500" id="detailRoll">Roll</p></div><div class="space-y-3 mb-6"><div class="flex justify-between text-sm border-b pb-2"><span class="text-slate-500">Register No:</span><span class="font-bold text-slate-700" id="detailReg">--</span></div><div class="flex justify-between text-sm border-b pb-2"><span class="text-slate-500">Date of Birth:</span><span class="font-bold text-slate-700" id="detailDob">--</span></div><div class="flex justify-between text-sm border-b pb-2"><span class="text-slate-500">Attendance:</span><span class="font-bold text-emerald-600" id="detailAtt">--%</span></div></div><button onclick="closeModal('studentDetailsModal')" class="w-full bg-slate-100 text-slate-700 py-2 rounded-lg font-bold text-sm">Close</button></div></div>
+    <div id="addSubjectModal" class="modal hidden"><div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm mx-4"><h3 class="text-lg font-bold mb-4">Add Subject</h3><form id="addSubjectForm" class="space-y-4"><input type="text" id="newSubjectName" placeholder="e.g. Power Electronics" required class="w-full p-3 border rounded-lg text-sm bg-slate-50"><p class="text-xs text-slate-500">Added to <span id="modalSemDisplay" class="font-bold"></span>.</p><div class="flex gap-2 pt-2"><button type="button" onclick="closeModal('addSubjectModal')" class="flex-1 py-2 bg-slate-100 rounded-lg font-bold text-sm">Cancel</button><button type="submit" class="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-bold text-sm">Add</button></div></form></div></div>
+    <div id="profileModal" class="modal hidden">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm mx-4">
+            <h3 class="text-lg font-bold mb-4">Settings</h3>
+            <div class="mb-4">
+                <label class="text-xs font-bold text-slate-400 uppercase">WhatsApp Number</label>
+                <input type="text" id="profileWhatsapp" placeholder="919876543210" class="w-full p-3 border rounded-lg text-sm mt-1">
+            </div>
+            <button onclick="updateProfile()" class="w-full bg-slate-100 text-slate-700 py-2 rounded-lg font-bold mb-4 text-xs">Save Profile</button>
+            <hr class="border-slate-100 my-4">
+            <p class="text-xs font-bold text-slate-400 uppercase mb-2">Security</p>
+            <input type="password" id="newPassword" placeholder="New Password" class="w-full p-3 border rounded-lg text-sm mb-2">
+            <button onclick="changePassword()" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-bold mb-3">Update Password</button>
+            <button onclick="handleLogout()" class="w-full border border-red-200 text-red-500 py-2 rounded-lg font-bold mb-3">Logout</button>
+            <button onclick="closeModal('profileModal')" class="w-full text-slate-400 text-xs font-bold">Close</button>
+        </div>
+    </div>
+    <div id="addFacultyModal" class="modal hidden"><div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm mx-4"><h3 class="text-lg font-bold mb-4 text-slate-800">Add Faculty</h3><form id="addFacultyForm" class="space-y-3"><input type="text" id="newFacultyName" placeholder="Faculty Name" required class="w-full p-3 border rounded-lg text-sm bg-slate-50"><div class="flex gap-2 pt-2"><button type="button" onclick="closeModal('addFacultyModal')" class="flex-1 py-2 bg-slate-100 text-slate-600 rounded-lg font-bold text-sm">Cancel</button><button type="submit" class="flex-1 py-2 bg-emerald-600 text-white rounded-lg font-bold text-sm">Add</button></div></form></div></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, getDocs, query, where, addDoc, deleteDoc, doc, updateDoc, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyAnf5rSx0FLGEhooppoXnnl74rrIR-Z1lM", authDomain: "attendance-eee.firebaseapp.com", projectId: "attendance-eee", storageBucket: "attendance-eee.firebasestorage.app", messagingSenderId: "843713468526", appId: "1:843713468526:web:3b2ef56f8a964336e0ee7f" };
+        const app = initializeApp(firebaseConfig); const db = getFirestore(app); const auth = getAuth(app); const appId = 'attendance-eee-app-global-share';
+        
+        let currentFaculty = null;
+        let studentsData = [];
+        let presentRolls = new Set();
+
+        async function attemptLogin(email, pass) {
+            try {
+                await signOut(auth);
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
+                else await signInAnonymously(auth);
+
+                const q = query(collection(db, `artifacts/${appId}/public/data/faculty`), where("generatedEmail", "==", email), where("generatedPassword", "==", pass));
+                const snap = await getDocs(q);
+                if(snap.empty) throw new Error("Invalid credentials");
+                
+                currentFaculty = { id: snap.docs[0].id, ...snap.docs[0].data() };
+                localStorage.setItem('faculty_user', JSON.stringify(currentFaculty));
+                initTeacherApp();
+            } catch(err) {
+                if (err.code === 'auth/admin-restricted-operation') alert("Enable Anonymous Auth in Firebase Console.");
+                document.getElementById('loginMessage').textContent = err.message;
+            }
+        }
+
+        if(localStorage.getItem('faculty_user')) { currentFaculty = JSON.parse(localStorage.getItem('faculty_user')); signInAnonymously(auth).then(() => initTeacherApp()).catch(console.error); }
+        document.getElementById('loginForm').addEventListener('submit', (e) => { e.preventDefault(); attemptLogin(document.getElementById('email').value, document.getElementById('password').value); });
+
+        function initTeacherApp() {
+            document.getElementById('loginPage').classList.add('hidden'); document.getElementById('mainApp').classList.remove('hidden');
+            document.getElementById('facultyName').textContent = currentFaculty.name;
+            document.getElementById('profileWhatsapp').value = currentFaculty.whatsapp || '';
+            
+            const badge = document.getElementById('roleBadge');
+            if (currentFaculty.isHOD) {
+                badge.textContent = "HOD"; badge.className = "bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-[10px] font-bold border border-yellow-300 block";
+                ['tabMyClass','tabLeaves','tabDept'].forEach(id => document.getElementById(id).classList.remove('hidden'));
+                setupHODView();
+            } else if (currentFaculty.tutorSemesters?.length > 0) {
+                badge.textContent = `Tutor`; badge.className = "bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-300 block";
+                ['tabMyClass','tabLeaves'].forEach(id => document.getElementById(id).classList.remove('hidden'));
+                setupTutorView();
+            } else badge.classList.add('hidden');
+            document.getElementById('attDate').valueAsDate = new Date();
+            loadAttendanceData();
+        }
+
+        window.switchTab = (tabId, btn) => {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active', 'text-emerald-600', 'border-emerald-500'));
+            document.getElementById(tabId).classList.add('active'); btn.classList.add('active', 'text-emerald-600', 'border-emerald-500');
+            document.getElementById('attendanceActionFooter').style.display = tabId === 'attendance' ? 'block' : 'none';
+        };
+
+        // --- ATTENDANCE & SORTING LOGIC ---
+        async function loadAttendanceData() {
+            const sem = document.getElementById('semSelect').value;
+            const subSelect = document.getElementById('attSubject'); subSelect.innerHTML = '<option>Loading...</option>';
+            const subSnap = await getDocs(query(collection(db, `artifacts/${appId}/public/data/subjects`), where("semester", "==", sem)));
+            subSelect.innerHTML = ''; subSnap.forEach(d => subSelect.innerHTML += `<option value="${d.data().name}">${d.data().name}</option>`);
+
+            const grid = document.getElementById('attendanceGrid'); grid.innerHTML = '<p class="col-span-full text-center text-slate-400 py-8"><span class="loader"></span></p>';
+            const stuSnap = await getDocs(query(collection(db, `artifacts/${appId}/public/data/students`), where("semester", "==", sem)));
+            studentsData = []; stuSnap.forEach(d => studentsData.push({id: d.id, ...d.data()}));
+            
+            studentsData.sort((a,b) => {
+                const typeA = a.type || 'regular'; const typeB = b.type || 'regular';
+                if (typeA === typeB) return a.name.localeCompare(b.name);
+                return typeA === 'regular' ? -1 : 1; 
+            });
+
+            document.getElementById('studentCount').textContent = `${studentsData.length} Students`;
+            grid.innerHTML = ''; presentRolls.clear();
+            studentsData.forEach(s => {
+                const btn = document.createElement('div'); btn.className = 'roll-btn absent touch-target cursor-pointer'; 
+                btn.innerHTML = `<span class="text-lg pointer-events-none">${s.rollNo.slice(-2)}</span><span class="text-[10px] truncate w-full text-center px-1 pointer-events-none">${s.name.split(' ')[0]}</span>`; 
+                btn.onclick = () => { if(presentRolls.has(s.rollNo)) { presentRolls.delete(s.rollNo); btn.classList.remove('present'); btn.classList.add('absent'); } else { presentRolls.add(s.rollNo); btn.classList.remove('absent'); btn.classList.add('present'); } updateCounts(); };
+                grid.appendChild(btn);
+            });
+            updateCounts();
+        }
+        function updateCounts() { document.getElementById('countPresent').textContent = `${presentRolls.size} Present`; document.getElementById('countAbsent').textContent = `${studentsData.length - presentRolls.size} Absent`; }
+        document.getElementById('semSelect').addEventListener('change', loadAttendanceData);
+
+        // --- CLASS MANAGEMENT ---
+        function setupTutorView() { 
+            const s = document.getElementById('manageSemSelect'); s.innerHTML=''; currentFaculty.tutorSemesters.forEach(v=>s.innerHTML+=`<option value="${v}">Sem ${v}</option>`);
+            s.addEventListener('change', () => { loadClassData(); loadApprovals(); }); loadClassData(); loadApprovals();
+        }
+        function setupHODView() {
+            const s = document.getElementById('manageSemSelect'); s.innerHTML=''; [1,2,3,4,5,6].forEach(v=>s.innerHTML+=`<option value="${v}">Sem ${v}</option>`);
+            s.addEventListener('change', () => { loadClassData(); loadApprovals(); }); loadClassData(); loadApprovals(); loadFacultyList();
+        }
+
+        async function loadClassData() {
+            const sem = document.getElementById('manageSemSelect').value;
+            const stuList = document.getElementById('manageStudentList');
+            const subList = document.getElementById('manageSubjectList');
+            
+            stuList.innerHTML = '<div class="p-4 text-center">Loading...</div>';
+            subList.innerHTML = '<div class="p-4 text-center">Loading...</div>';
+
+            const sSnap = await getDocs(query(collection(db, `artifacts/${appId}/public/data/students`), where("semester", "==", sem)));
+            const students = []; sSnap.forEach(d => students.push({id: d.id, ...d.data()}));
+            
+            students.sort((a,b) => {
+                const typeA = a.type || 'regular'; const typeB = b.type || 'regular';
+                if (typeA === typeB) return a.name.localeCompare(b.name);
+                return typeA === 'regular' ? -1 : 1; 
+            });
+
+            stuList.innerHTML = '';
+            const today = new Date(); const bdays = [];
+            students.forEach(s => {
+                const isRep = s.isRep ? '<span class="text-[10px] bg-amber-100 text-amber-700 px-1 rounded ml-2 border border-amber-200">Rep</span>' : '';
+                const repColor = s.isRep ? 'text-amber-500' : 'text-slate-300 hover:text-amber-500';
+                const typeBadge = s.type === 'let' ? '<span class="text-[10px] bg-purple-100 text-purple-700 px-1 rounded ml-1">LET</span>' : '';
+                
+                stuList.innerHTML += `
+                <div class="p-3 flex justify-between items-center hover:bg-slate-50 cursor-pointer" onclick="viewStudentDetails('${s.id}')">
+                    <div class="flex items-center"><span class="font-bold text-slate-700 text-xs mr-2 w-6">${s.rollNo}</span><span class="text-sm truncate">${s.name}</span>${isRep}${typeBadge}</div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="event.stopPropagation(); toggleStudentRep('${s.id}', ${!s.isRep})" class="${repColor}"><i class="fa-solid fa-star"></i></button>
+                        <button onclick="event.stopPropagation(); deleteItem('students','${s.id}')" class="text-red-400 hover:text-red-600"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>`;
+                if (s.dob && new Date(s.dob).getDate() === today.getDate() && new Date(s.dob).getMonth() === today.getMonth()) bdays.push(s.name);
+            });
+            
+            const bWidget = document.getElementById('teacherBirthdayWidget');
+            if(bdays.length) { document.getElementById('teacherBdayNames').textContent = bdays.join(', '); bWidget.classList.remove('hidden'); } 
+            else bWidget.classList.add('hidden');
+
+            const subSnap = await getDocs(query(collection(db, `artifacts/${appId}/public/data/subjects`), where("semester", "==", sem)));
+            subList.innerHTML = '';
+            subSnap.forEach(doc => {
+                const s = doc.data();
+                subList.innerHTML += `<div class="p-3 flex justify-between items-center hover:bg-slate-50"><span class="text-sm font-medium">${s.name}</span><button onclick="deleteItem('subjects','${doc.id}')" class="text-red-400 hover:text-red-600"><i class="fa-solid fa-trash"></i></button></div>`;
+            });
+        }
+
+        window.autoSortAndRenumber = async (silent = false) => {
+            const sem = document.getElementById('manageSemSelect').value;
+            if(!silent && !confirm(`This will re-assign Roll Numbers for Semester ${sem}:\n1. Regulars (A-Z) start at 1.\n2. Lateral Entry (A-Z) follow after.\nProceed?`)) return;
+
+            const q = query(collection(db, `artifacts/${appId}/public/data/students`), where("semester", "==", sem));
+            const snap = await getDocs(q);
+            let list = []; snap.forEach(d => list.push({id: d.id, ...d.data()}));
+
+            list.sort((a,b) => {
+                const typeA = a.type || 'regular'; const typeB = b.type || 'regular';
+                if (typeA === typeB) return a.name.localeCompare(b.name);
+                return typeA === 'regular' ? -1 : 1;
+            });
+
+            const batch = writeBatch(db);
+            list.forEach((s, index) => {
+                const ref = doc(db, `artifacts/${appId}/public/data/students/${s.id}`);
+                batch.update(ref, { rollNo: (index + 1).toString().padStart(2, '0') });
+            });
+            await batch.commit(); 
+            if(!silent) alert("Class re-organized and roll numbers updated!");
+            loadClassData();
+        };
+
+        window.toggleStudentRep = async (id, val) => { await updateDoc(doc(db, `artifacts/${appId}/public/data/students/${id}`), { isRep: val }); loadClassData(); };
+
+        document.getElementById('addStudentForm').addEventListener('submit', async e => {
+            e.preventDefault(); const sem = document.getElementById('manageSemSelect').value;
+            const creds = generateCredentials(document.getElementById('newStudentName').value);
+            await addDoc(collection(db, `artifacts/${appId}/public/data/students`), {
+                name: document.getElementById('newStudentName').value, 
+                type: document.getElementById('newStudentType').value, 
+                rollNo: "TBD", semester: sem, generatedEmail: creds.email, generatedPassword: creds.password, role: 'student'
+            });
+            closeModal('addStudentModal'); await autoSortAndRenumber(true); alert("Student added and roll numbers updated."); e.target.reset();
+        });
+
+        // --- APPROVALS (LEAVES + ATTENDANCE) ---
+        function loadApprovals() {
+            const currentSem = document.getElementById('manageSemSelect').value;
+            
+            // 1. Leaves
+            onSnapshot(query(collection(db, `artifacts/${appId}/public/data/leaveRequests`), where("semester", "==", currentSem)), (snap) => {
+                const list = document.getElementById('tutorLeaveList'); list.innerHTML = '';
+                const pending = []; snap.forEach(d => { if(d.data().status === 'Pending') pending.push({id: d.id, ...d.data()}); });
+                if(pending.length === 0) list.innerHTML = '<p class="text-center text-slate-400 text-sm py-4">No pending requests.</p>';
+                pending.forEach(l => {
+                    list.innerHTML += `<div class="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm"><div class="flex justify-between mb-2"><div><span class="font-bold text-indigo-900 text-sm">${l.studentName}</span> <span class="text-xs text-slate-500">(${l.rollNo})</span></div><span class="text-xs font-bold text-slate-500">${l.date}</span></div><p class="text-sm text-slate-600 bg-slate-50 p-2 rounded mb-3">${l.reason}</p><div class="flex gap-2"><button onclick="updateApproval('leaveRequests', '${l.id}', 'Approved')" class="flex-1 bg-emerald-100 text-emerald-700 py-1.5 rounded-lg text-xs font-bold">Approve</button><button onclick="updateApproval('leaveRequests', '${l.id}', 'Rejected')" class="flex-1 bg-red-100 text-red-700 py-1.5 rounded-lg text-xs font-bold">Reject</button></div></div>`;
+                });
+            });
+
+            // 2. Pending Attendance
+            onSnapshot(query(collection(db, `artifacts/${appId}/public/data/dailyAttendance`), where("semester", "==", currentSem), where("status", "==", "Pending")), (snap) => {
+                const list = document.getElementById('pendingAttendanceList'); list.innerHTML = '';
+                if(snap.empty) { list.innerHTML = '<p class="text-center text-slate-400 text-sm py-2">No pending logs.</p>'; return; }
+                
+                snap.forEach(d => {
+                    const log = {id: d.id, ...d.data()};
+                    const absents = log.absentRollNos.length > 0 ? log.absentRollNos.join(', ') : 'None';
+                    list.innerHTML += `<div class="bg-white p-3 rounded-lg border border-amber-200 shadow-sm"><div class="flex justify-between items-center mb-2"><span class="text-xs font-bold bg-amber-100 text-amber-800 px-2 py-1 rounded">Log by ${log.markedBy}</span><span class="text-xs text-slate-500">${log.date}</span></div><p class="text-sm font-bold text-slate-800">${log.subjectName} <span class="font-normal text-xs">(${log.periodNo})</span></p><p class="text-xs text-red-500 mt-1">Absentees: ${absents}</p><div class="flex gap-2 mt-3"><button onclick="updateApproval('dailyAttendance', '${log.id}', 'Approved')" class="flex-1 bg-emerald-600 text-white py-1 rounded text-xs font-bold">Accept Log</button><button onclick="deleteItem('dailyAttendance', '${log.id}')" class="flex-1 bg-red-100 text-red-600 py-1 rounded text-xs font-bold">Discard</button></div></div>`;
+                });
+            });
+        }
+
+        window.updateApproval = async (coll, id, status) => {
+            await updateDoc(doc(db, `artifacts/${appId}/public/data/${coll}/${id}`), { status: status });
+        };
+
+        // --- HELPERS ---
+        window.openModal = (id) => {
+            if(id === 'addStudentModal') {
+                const sem = document.getElementById('manageSemSelect').value;
+                const letOpt = document.getElementById('optLet');
+                if (parseInt(sem) < 3) letOpt.disabled = true; else letOpt.disabled = false;
+            }
+            document.getElementById(id).classList.remove('hidden');
+        }
+        function generateCredentials(name) { const r = Math.floor(1000+Math.random()*9000); return { email: `${name.substring(0,4).toLowerCase()}${r}@gptc.in`, password: `pass${r}` }; }
+        window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
+        window.handleLogout = () => { localStorage.removeItem('faculty_user'); location.reload(); };
+        window.deleteItem = async (coll, id) => { if(confirm("Delete?")) { await deleteDoc(doc(db, `artifacts/${appId}/public/data/${coll}/${id}`)); loadClassData(); }};
+        window.openAddSubjectModal = () => { document.getElementById('modalSemDisplay').textContent = document.getElementById('semSelect').value; document.getElementById('addSubjectModal').classList.remove('hidden'); };
+        document.getElementById('addSubjectForm').addEventListener('submit', async (e) => { e.preventDefault(); let sem = '1'; if(!document.getElementById('attendance').classList.contains('active')) { sem = document.getElementById('manageSemSelect').value; } else { sem = document.getElementById('semSelect').value; } await addDoc(collection(db, `artifacts/${appId}/public/data/subjects`), { name: document.getElementById('newSubjectName').value, semester: sem }); closeModal('addSubjectModal'); loadClassData(); e.target.reset(); });
+        document.getElementById('submitBtn').addEventListener('click', async () => { const date = document.getElementById('attDate').value; const period = document.getElementById('attPeriod').value; const subject = document.getElementById('attSubject').value; if(!date || !period || !subject) return alert("Select Date, Period & Subject"); const absentRollNos = studentsData.filter(s => !presentRolls.has(s.rollNo)).map(s => s.rollNo); await addDoc(collection(db, `artifacts/${appId}/public/data/dailyAttendance`), { date, periodNo: parseInt(period), facultyName: currentFaculty.name, subjectName: subject, absentRollNos, semester: document.getElementById('semSelect').value, timestamp: new Date().toISOString(), status: 'Approved', markedBy: 'Faculty' }); alert("Submitted!"); presentRolls.clear(); loadAttendanceData(); });
+        window.viewStudentDetails = async (id) => { const docSnap = await getDocs(query(collection(db, `artifacts/${appId}/public/data/students`), where("__name__", "==", id))); if (docSnap.empty) return; const s = docSnap.docs[0].data(); document.getElementById('detailName').textContent = s.name; document.getElementById('detailRoll').textContent = `${s.rollNo} - Sem ${s.semester}`; document.getElementById('detailInitials').textContent = s.name.substring(0,2).toUpperCase(); document.getElementById('detailReg').textContent = s.registerNo || 'Not Set'; document.getElementById('detailDob').textContent = s.dob || 'Not Set'; const attSnap = await getDocs(query(collection(db, `artifacts/${appId}/public/data/dailyAttendance`), where("semester", "==", s.semester))); let total = 0, attended = 0; attSnap.forEach(d => { total++; if (!d.data().absentRollNos.includes(s.rollNo)) attended++; }); const pct = total ? Math.round((attended/total)*100) : 0; document.getElementById('detailAtt').textContent = `${pct}% (${attended}/${total})`; openModal('studentDetailsModal'); };
+        async function loadFacultyList() { const list = document.getElementById('deptFacultyList'); const snap = await getDocs(collection(db, `artifacts/${appId}/public/data/faculty`)); list.innerHTML = ''; snap.forEach(doc => { const f = doc.data(); const isTutor = f.tutorSemesters && f.tutorSemesters.length ? `<span class="text-[10px] bg-blue-100 text-blue-700 px-1 rounded">Tutor: ${f.tutorSemesters.join(',')}</span>` : ''; list.innerHTML += `<div class="p-3 flex justify-between items-center hover:bg-slate-50"><div><p class="font-bold text-sm text-slate-700">${f.name}</p>${isTutor}</div><div class="flex gap-2"><button onclick="deleteItem('faculty','${doc.id}')" class="text-red-400"><i class="fa-solid fa-trash"></i></button></div></div>`; }); }
+        
+        // PROFILE
+        window.updateProfile = async () => {
+            const wa = document.getElementById('profileWhatsapp').value;
+            await updateDoc(doc(db, `artifacts/${appId}/public/data/faculty/${currentFaculty.id}`), { whatsapp: wa });
+            currentFaculty.whatsapp = wa; localStorage.setItem('faculty_user', JSON.stringify(currentFaculty));
+            alert("Profile updated");
+        };
+        window.changePassword = async () => { const newPass = document.getElementById('newPassword').value; if(!newPass) return alert("Enter new password"); await updateDoc(doc(db, `artifacts/${appId}/public/data/faculty/${currentFaculty.id}`), { generatedPassword: newPass }); alert("Password Updated!"); closeModal('profileModal'); };
+        window.downloadAttendancePDF = () => { if(studentsData.length === 0) return alert("No data"); const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.text(`Attendance - ${document.getElementById('attDate').value}`, 14, 15); const data = studentsData.map(s => [s.rollNo, s.name, presentRolls.has(s.rollNo)?'Present':'Absent']); doc.autoTable({ head:[['Roll','Name','Status']], body:data, startY:20 }); doc.save('attendance.pdf'); }
+    </script>
+</body>
+</html>

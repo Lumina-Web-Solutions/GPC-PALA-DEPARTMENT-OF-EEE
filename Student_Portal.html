@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Portal - GPTC Pala</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+        .lumina-power-footer { display: flex; justify-content: center; align-items: center; gap: 0.5rem; font-family: 'Poppins', sans-serif; text-decoration: none; margin-top: 1rem; opacity: 0.7; }
+        .lumina-logo-text { font-weight: 700; color: #cbd5e1; letter-spacing: 0.05em; }
+        .lumina-logo-text .accent { color: #3b82f6; }
+        .lumina-logo-tagline { font-size: 0.5rem; color: #94a3b8; letter-spacing: 0.2em; text-transform: uppercase; }
+        .card { background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .status-badge { padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+        .status-present { background: #dcfce7; color: #166534; }
+        .status-absent { background: #fee2e2; color: #991b1b; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; font-size: 0.7rem; color: #64748b; gap: 4px; }
+        .nav-item.active { color: #4f46e5; font-weight: 600; }
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #4f46e5; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; z-index: 50; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
+        .modal.hidden { display: none; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-800">
+
+    <!-- LOGIN -->
+    <div id="loginPage" class="min-h-screen flex flex-col items-center justify-center bg-slate-900 p-6 relative overflow-hidden">
+        <div class="w-full max-w-sm relative z-10">
+            <div class="text-center mb-8">
+                <img src="https://cdn.universitykart.com//Content/upload/admin/2gxbml1q.ori.jpg" class="w-20 h-20 rounded-full border-4 border-slate-700 shadow-xl mx-auto mb-4">
+                <h1 class="text-3xl font-bold text-white tracking-tight">Student Portal</h1>
+                <p class="text-slate-400 text-sm mt-1">Dept. of EEE • GPTC Pala</p>
+            </div>
+            <div class="bg-white/10 backdrop-blur-lg border border-white/10 p-6 rounded-2xl shadow-2xl">
+                <form id="loginForm" class="space-y-4">
+                    <div><label class="text-xs font-bold text-slate-300 uppercase ml-1">Student Email</label><input type="email" id="email" required class="w-full px-4 py-3 bg-slate-800/50 border border-slate-600 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"></div>
+                    <div><label class="text-xs font-bold text-slate-300 uppercase ml-1">Password</label><input type="password" id="password" required class="w-full px-4 py-3 bg-slate-800/50 border border-slate-600 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"></div>
+                    <button type="submit" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition mt-2">Login</button>
+                    <div id="loginMessage" class="text-center text-xs text-red-400 font-medium min-h-[20px]"></div>
+                </form>
+            </div>
+            <div class="mt-12 text-center"><a href="https://luminaweb.vercel.app/" target="_blank" class="lumina-power-footer"><span class="text-[10px] text-slate-500 uppercase tracking-wider">Powered by</span><div class="text-left leading-tight"><div class="lumina-logo-text text-sm">LUMINA<span class="accent">.</span></div></div></a></div>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="mainApp" class="hidden flex-1 flex flex-col pb-20">
+        <header class="bg-white shadow-sm sticky top-0 z-30 px-6 py-4 flex justify-between items-center">
+            <div><h1 class="text-xl font-bold text-slate-800">My Dashboard</h1><p class="text-xs text-slate-500" id="headerDate">Loading...</p></div>
+            <button onclick="openModal('profileModal')" class="bg-indigo-50 text-indigo-600 p-2 rounded-full w-10 h-10 flex items-center justify-center hover:bg-indigo-100"><i class="fa-solid fa-user-gear"></i></button>
+        </header>
+        
+        <main class="p-4 space-y-6 flex-1 overflow-y-auto">
+            <!-- Profile Card -->
+            <div class="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                <div class="relative z-10">
+                    <h2 class="text-2xl font-bold mb-1" id="studentName">Loading...</h2>
+                    <div class="flex flex-wrap items-center gap-3 text-indigo-100 text-xs font-medium">
+                        <span class="bg-white/20 px-2 py-1 rounded" id="studentRoll">---</span>
+                        <span id="studentSem">Semester -</span>
+                        <span class="border-l border-white/30 pl-3 ml-1" id="studentReg">Reg: ---</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HOME TAB -->
+            <div id="homeSection">
+                <!-- Birthdays Widget -->
+                <div id="birthdayWidget" class="hidden mb-4 bg-pink-50 p-4 rounded-xl border border-pink-100 flex items-start gap-3">
+                    <div class="bg-pink-100 p-2 rounded-full text-pink-500"><i class="fa-solid fa-cake-candles"></i></div>
+                    <div>
+                        <h4 class="font-bold text-pink-800 text-sm">Birthdays Today!</h4>
+                        <p class="text-xs text-pink-600 mt-1" id="bdayNames">Loading...</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="card flex flex-col items-center justify-center text-center py-6"><div class="text-3xl font-bold text-indigo-600 mb-1" id="attPercentage">--%</div><p class="text-xs text-slate-500 font-bold uppercase">Attendance</p></div>
+                    <div class="card flex flex-col items-center justify-center text-center py-6"><div class="text-3xl font-bold text-slate-700 mb-1" id="totalClasses">--</div><p class="text-xs text-slate-500 font-bold uppercase">Total Hours</p></div>
+                </div>
+                <h3 class="font-bold text-slate-700 mb-3">Recent Activity</h3>
+                <div class="space-y-3" id="attendanceList"><div class="text-center py-8"><div class="loader"></div></div></div>
+            </div>
+
+            <!-- LEAVES TAB -->
+            <div id="leaveSection" class="hidden">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6">
+                    <h3 class="font-bold text-slate-800 mb-3">Apply for Leave</h3>
+                    <form id="leaveForm" class="space-y-3">
+                        <input type="date" id="leaveDate" required class="w-full p-2 border rounded-lg text-sm">
+                        <textarea id="leaveReason" placeholder="Reason for leave..." required class="w-full p-2 border rounded-lg text-sm h-20"></textarea>
+                        <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-bold text-sm">Submit Request</button>
+                    </form>
+                </div>
+                <h3 class="font-bold text-slate-700 mb-3">My Requests</h3>
+                <div id="leaveList" class="space-y-3"></div>
+            </div>
+
+            <!-- NEWS TAB -->
+            <div id="newsSection" class="hidden">
+                <h3 class="font-bold text-slate-700 mb-3">Announcements</h3>
+                <div class="space-y-4" id="announcementList"></div>
+            </div>
+        </main>
+
+        <nav class="bg-white border-t border-slate-200 fixed bottom-0 w-full pb-safe pt-2 px-6 flex justify-between items-center h-16 z-40">
+            <button class="nav-item active" onclick="switchTab('home', this)"><i class="fa-solid fa-house"></i><span>Home</span></button>
+            <button class="nav-item" onclick="switchTab('leaves', this)"><i class="fa-solid fa-calendar-xmark"></i><span>Leaves</span></button>
+            <button class="nav-item" onclick="switchTab('news', this)"><i class="fa-solid fa-bell"></i><span>News</span></button>
+        </nav>
+    </div>
+
+    <!-- Complete Profile Modal -->
+    <div id="completeProfileModal" class="modal hidden" data-backdrop="static">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm mx-4">
+            <h3 class="text-lg font-bold mb-2 text-slate-800">Complete Your Profile</h3>
+            <p class="text-xs text-slate-500 mb-4">Please update your details to continue.</p>
+            <div class="space-y-3">
+                <div>
+                    <label class="text-[10px] font-bold uppercase text-slate-400">Register Number</label>
+                    <input type="text" id="initRegNo" placeholder="e.g., 220105" class="w-full p-2 border rounded-lg text-sm font-bold">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase text-slate-400">Date of Birth</label>
+                    <input type="date" id="initDob" class="w-full p-2 border rounded-lg text-sm font-bold">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase text-slate-400">Roll Number (Verify)</label>
+                    <input type="text" id="initRollNo" class="w-full p-2 border rounded-lg text-sm font-bold" readonly>
+                </div>
+                <button id="saveProfileBtn" onclick="saveInitialProfile()" class="w-full bg-emerald-600 text-white py-2 rounded-lg font-bold shadow-lg mt-2">Save & Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Settings Modal -->
+    <div id="profileModal" class="modal hidden">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm mx-4">
+            <h3 class="text-lg font-bold mb-4 text-slate-800">Settings</h3>
+            <div class="space-y-3 mb-4">
+                <p class="text-xs font-bold text-slate-400 uppercase">Edit Personal Details</p>
+                <input type="text" id="editRegNo" placeholder="Register No" class="w-full p-2 border rounded-lg text-sm">
+                <input type="date" id="editDob" class="w-full p-2 border rounded-lg text-sm">
+                <button onclick="updateDetails()" class="w-full bg-slate-100 text-slate-700 py-2 rounded-lg font-bold text-xs">Update Details</button>
+            </div>
+            <hr class="border-slate-100 my-4">
+            <p class="text-xs font-bold text-slate-400 uppercase mb-2">Security</p>
+            <input type="password" id="newPassword" placeholder="New Password" class="w-full p-2 border rounded-lg text-sm mb-2">
+            <button onclick="changePassword()" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-bold mb-3">Change Password</button>
+            <button onclick="handleLogout()" class="w-full border border-red-200 text-red-500 py-2 rounded-lg font-bold mb-3">Logout</button>
+            <button onclick="closeModal('profileModal')" class="w-full text-slate-400 text-xs font-bold">Close</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, getDocs, query, where, addDoc, doc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyAnf5rSx0FLGEhooppoXnnl74rrIR-Z1lM", authDomain: "attendance-eee.firebaseapp.com", projectId: "attendance-eee", storageBucket: "attendance-eee.firebasestorage.app", messagingSenderId: "843713468526", appId: "1:843713468526:web:3b2ef56f8a964336e0ee7f" };
+        const app = initializeApp(firebaseConfig); const db = getFirestore(app); const auth = getAuth(app); const appId = 'attendance-eee-app-global-share';
+        let currentUserProfile = null;
+
+        // --- UNIFIED AUTH FUNCTION ---
+        async function initAuth() {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
+        }
+
+        // --- LOGIN ---
+        async function attemptLogin(email, pass) {
+            try {
+                await signOut(auth); // Reset state
+                await initAuth(); // Ensure connection
+
+                const q = query(collection(db, `artifacts/${appId}/public/data/students`), where("generatedEmail", "==", email), where("generatedPassword", "==", pass));
+                const snap = await getDocs(q);
+                if(snap.empty) throw new Error("Invalid credentials");
+                
+                currentUserProfile = { id: snap.docs[0].id, ...snap.docs[0].data() };
+                localStorage.setItem('student_user', JSON.stringify(currentUserProfile));
+                initStudentApp();
+            } catch(err) {
+                if (err.code === 'auth/admin-restricted-operation') alert("Enable Anonymous Auth in Firebase Console.");
+                document.getElementById('loginMessage').textContent = err.message;
+            }
+        }
+
+        // --- RESTORE SESSION ---
+        if(localStorage.getItem('student_user')) {
+            currentUserProfile = JSON.parse(localStorage.getItem('student_user'));
+            initAuth().then(() => initStudentApp()).catch(e => {
+                console.error("Auth error on restore", e);
+            });
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', (e) => { e.preventDefault(); attemptLogin(document.getElementById('email').value, document.getElementById('password').value); });
+
+        function initStudentApp() {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            
+            // Check for missing details
+            if (!currentUserProfile.registerNo || !currentUserProfile.dob) {
+                document.getElementById('initRollNo').value = currentUserProfile.rollNo;
+                document.getElementById('completeProfileModal').classList.remove('hidden');
+            }
+
+            renderHeaderInfo();
+            loadAttendance(); loadAnnouncements(); loadLeaveHistory(); checkBirthdays();
+        }
+
+        function renderHeaderInfo() {
+            document.getElementById('headerDate').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+            document.getElementById('studentName').textContent = currentUserProfile.name;
+            document.getElementById('studentRoll').textContent = currentUserProfile.rollNo;
+            document.getElementById('studentSem').textContent = `Sem ${currentUserProfile.semester}`;
+            document.getElementById('studentReg').textContent = `Reg: ${currentUserProfile.registerNo || 'N/A'}`;
+            
+            // Populate Edit Modal
+            document.getElementById('editRegNo').value = currentUserProfile.registerNo || '';
+            document.getElementById('editDob').value = currentUserProfile.dob || '';
+
+            // NEW: Show Rep Badge if applicable
+            if (currentUserProfile.isRep) {
+                const badge = document.createElement('span');
+                badge.className = 'bg-amber-400 text-black text-[10px] px-2 py-0.5 rounded-full font-bold ml-2';
+                badge.innerHTML = '<i class="fa-solid fa-star mr-1"></i>Class Rep';
+                // Avoid duplicate
+                const existing = document.getElementById('studentName').querySelector('.bg-amber-400');
+                if (!existing) document.getElementById('studentName').appendChild(badge);
+            }
+        }
+
+        // --- PROFILE UPDATE LOGIC ---
+        window.saveInitialProfile = async () => {
+            const reg = document.getElementById('initRegNo').value;
+            const dob = document.getElementById('initDob').value;
+            const btn = document.getElementById('saveProfileBtn'); // Corrected ID reference
+            
+            if(!reg || !dob) return alert("Please fill all fields");
+            
+            const originalText = btn.textContent;
+            btn.textContent = "Saving...";
+            btn.disabled = true;
+
+            try {
+                if(!currentUserProfile || !currentUserProfile.id) throw new Error("User profile error. Relogin required.");
+
+                await updateDoc(doc(db, `artifacts/${appId}/public/data/students/${currentUserProfile.id}`), { registerNo: reg, dob: dob });
+                
+                currentUserProfile.registerNo = reg; 
+                currentUserProfile.dob = dob;
+                localStorage.setItem('student_user', JSON.stringify(currentUserProfile));
+                
+                document.getElementById('completeProfileModal').classList.add('hidden');
+                renderHeaderInfo();
+                checkBirthdays();
+                alert("Profile updated! Welcome.");
+            } catch (e) {
+                alert("Error saving profile: " + e.message);
+            } finally {
+                btn.textContent = originalText; 
+                btn.disabled = false;
+            }
+        };
+
+        window.updateDetails = async () => {
+            const reg = document.getElementById('editRegNo').value;
+            const dob = document.getElementById('editDob').value;
+            if(!reg || !dob) return alert("Fields cannot be empty");
+            try {
+                await updateDoc(doc(db, `artifacts/${appId}/public/data/students/${currentUserProfile.id}`), { registerNo: reg, dob: dob });
+                currentUserProfile.registerNo = reg; currentUserProfile.dob = dob;
+                localStorage.setItem('student_user', JSON.stringify(currentUserProfile));
+                alert("Details Updated"); renderHeaderInfo();
+            } catch(e) { alert("Update failed: " + e.message); }
+        };
+
+        // --- BIRTHDAY LOGIC ---
+        async function checkBirthdays() {
+            const q = query(collection(db, `artifacts/${appId}/public/data/students`), where("semester", "==", currentUserProfile.semester));
+            const snap = await getDocs(q);
+            const today = new Date();
+            const bdays = [];
+            
+            snap.forEach(doc => {
+                const s = doc.data();
+                if (s.dob) {
+                    const d = new Date(s.dob);
+                    if (d.getDate() === today.getDate() && d.getMonth() === today.getMonth()) {
+                        bdays.push(s.name);
+                    }
+                }
+            });
+
+            if (bdays.length > 0) {
+                document.getElementById('bdayNames').textContent = bdays.join(', ');
+                document.getElementById('birthdayWidget').classList.remove('hidden');
+            }
+        }
+
+        async function loadAttendance() {
+            const list = document.getElementById('attendanceList'); const sem = currentUserProfile.semester; const myRoll = currentUserProfile.rollNo;
+            const snap = await getDocs(query(collection(db, `artifacts/${appId}/public/data/dailyAttendance`), where("semester", "==", sem)));
+            const logs = []; let total=0, attended=0;
+            snap.forEach(doc => { const d = doc.data(); logs.push(d); total++; if(!d.absentRollNos.includes(myRoll)) attended++; });
+            logs.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+            const pct = total ? Math.round((attended/total)*100) : 0;
+            document.getElementById('attPercentage').textContent = `${pct}%`; document.getElementById('totalClasses').textContent = total;
+            list.innerHTML = ''; if(!logs.length) list.innerHTML = '<p class="text-center text-slate-400 py-4">No records found.</p>';
+            logs.slice(0,50).forEach(log => {
+                const isAbsent = log.absentRollNos.includes(myRoll);
+                list.innerHTML += `<div class="card flex justify-between items-center p-4"><div><p class="text-xs font-bold text-slate-400 uppercase mb-1">${log.date}</p><h4 class="font-bold text-slate-800 text-sm">${log.subjectName}</h4><p class="text-xs text-slate-500">Period ${log.periodNo} • ${log.facultyName}</p></div><div class="status-badge ${isAbsent?'status-absent':'status-present'} flex items-center gap-1">${isAbsent?'Absent':'Present'}</div></div>`;
+            });
+        }
+
+        async function loadAnnouncements() {
+            const list = document.getElementById('announcementList');
+            const snap = await getDocs(query(collection(db, `artifacts/${appId}/public/data/announcements`), where("semester", "==", currentUserProfile.semester)));
+            list.innerHTML = ''; snap.forEach(doc => { const d = doc.data(); list.innerHTML += `<div class="card border-l-4 border-l-indigo-500"><h4 class="font-bold text-slate-800 mb-1">${d.title}</h4><p class="text-sm text-slate-600">${d.message}</p></div>`; });
+        }
+
+        document.getElementById('leaveForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const date = document.getElementById('leaveDate').value; const reason = document.getElementById('leaveReason').value;
+            if(!date || !reason) return;
+            await addDoc(collection(db, `artifacts/${appId}/public/data/leaveRequests`), { studentName: currentUserProfile.name, rollNo: currentUserProfile.rollNo, semester: currentUserProfile.semester, date: date, reason: reason, status: 'Pending', timestamp: new Date().toISOString() });
+            alert("Request Submitted!"); document.getElementById('leaveReason').value = ''; loadLeaveHistory();
+        });
+
+        function loadLeaveHistory() {
+            const list = document.getElementById('leaveList');
+            onSnapshot(query(collection(db, `artifacts/${appId}/public/data/leaveRequests`), where("rollNo", "==", currentUserProfile.rollNo)), (snap) => {
+                list.innerHTML = ''; if(snap.empty) { list.innerHTML = '<p class="text-center text-slate-400 text-xs">No leave requests.</p>'; return; }
+                const items = []; snap.forEach(d => items.push(d.data())); items.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+                items.forEach(l => {
+                    let color = l.status === 'Approved' ? 'text-green-600 bg-green-50' : (l.status === 'Rejected' ? 'text-red-600 bg-red-50' : 'text-yellow-600 bg-yellow-50');
+                    list.innerHTML += `<div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm"><div class="flex justify-between mb-1"><span class="font-bold text-slate-700 text-sm">${l.date}</span><span class="text-xs px-2 py-0.5 rounded font-bold ${color}">${l.status}</span></div><p class="text-xs text-slate-500">${l.reason}</p></div>`;
+                });
+            });
+        }
+
+        window.changePassword = async () => {
+            const newPass = document.getElementById('newPassword').value; if(!newPass) return alert("Enter new password");
+            await updateDoc(doc(db, `artifacts/${appId}/public/data/students/${currentUserProfile.id}`), { generatedPassword: newPass });
+            alert("Password Updated!"); closeModal('profileModal');
+        };
+
+        window.handleLogout = () => { localStorage.removeItem('student_user'); location.reload(); };
+        window.switchTab = (t,b) => { document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); b.classList.add('active'); document.getElementById('homeSection').classList.toggle('hidden', t!=='home'); document.getElementById('leaveSection').classList.toggle('hidden', t!=='leaves'); document.getElementById('newsSection').classList.toggle('hidden', t!=='news'); };
+        window.openModal = (id) => document.getElementById(id).classList.remove('hidden'); window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
+    </script>
+</body>
+</html>
